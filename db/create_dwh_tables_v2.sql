@@ -81,4 +81,4 @@ CREATE TABLE dwh.fact_balance (
   currencyCode VARCHAR(55) NULL,
   balanceLimit VARCHAR(55) NULL,
   staticComponent BIGINT NULL,
-  startDate DATETIME NOT NULL)
+  startDate DATE NOT NULL)
