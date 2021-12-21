@@ -1,3 +1,6 @@
+CREATE PROCEDURE populateDWH
+AS
+
 -------------------------
 -- Populate entity table
 -------------------------
@@ -42,7 +45,7 @@ ON ecr.entityID = ent.entityID AND ecr.clientID = usr.id
 WHERE ecr.entityID IS NULL AND ecr.clientID IS NULL
 
 -------------------------
--- Populate account table
+-- Populate account table - dupes added
 -------------------------
 INSERT INTO dwh.dim_account
 SELECT 
@@ -73,7 +76,7 @@ FROM [dbo].[plaid_investments_securities] sec
 LEFT JOIN dwh.dim_entity e
 ON sec.s_institution_id = e.plaidInsID
 LEFT JOIN dwh.dim_account acc 
-ON acc.accountName = sec.s_name AND acc.accountDescription = sec.s_ticker_symbol
+ON acc.accountName = sec.s_name 
 WHERE acc.accountName IS NULL AND acc.accountType IS NULL AND acc.accountSubType IS NULL
 GROUP BY e.entityID, sec.s_name, sec.s_ticker_symbol, sec.s_type
 
@@ -118,7 +121,7 @@ SELECT
     bal.b_blanace_iso_currency_code AS currencyCode,
     bal.b_blanace_limit AS balanceLimit,
     NULL AS staticComponent,
-    bal.created_at AS startDate
+    CAST(bal.created_at AS DATE) AS startDate
 INTO #temp_balance
 FROM [dbo].[plaid_balance] bal
 INNER JOIN dwh.dim_entity ent
@@ -137,10 +140,6 @@ WHERE NOT EXISTS
     FROM dwh.fact_balance bal WHERE
     bal.accountID = tbal.accountID AND
     bal.entityClientRelationID = tbal.entityClientRelationID AND
-    bal.balanceAvailable = tbal.balanceAvailable AND
     bal.balanceCurrent = tbal.balanceCurrent AND
-    bal.currencyCode = tbal.currencyCode AND
-    bal.balanceLimit = tbal.balanceLimit AND
-    bal.staticComponent = tbal.staticComponent AND
     bal.startDate = tbal.startDate 
 )
