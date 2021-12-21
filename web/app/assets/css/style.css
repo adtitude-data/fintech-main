@@ -891,3 +891,6 @@
 i.fa.fa-trash {
   color: #f70303 !important;
 }
+input[readonly] {
+  background: #d9d9d9;
+}

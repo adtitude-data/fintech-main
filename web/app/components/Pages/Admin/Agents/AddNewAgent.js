@@ -31,7 +31,13 @@ function AddNewAgent(props) {
 
 
   useEffect(() => {
-    if(props.view){
+    console.log('props.mode',props.add);
+    if(props.edit == 0){
+      console.log('add new');
+      setInputs(values => ({...values, fullname: ''}))
+      setInputs(values => ({...values, email: ''}))
+      setInputs(values => ({...values, phone: ''}))
+    }else{
       setEnableEdit(true);
       api.getAdminNewAgentSingle(props.edit).then( (data) => {
         data = data.data;
@@ -100,7 +106,7 @@ function AddNewAgent(props) {
                   </div>
                   <div className="col-12">
                     <div className="form-group">
-                      <input type="email" placeholder="Email" name="email"  value={inputs.email || ""}  onChange={_handleChange} required />
+                    <input type="email" placeholder="Email" readOnly={canEdit} name="email"  value={inputs.email || ""}  onChange={_handleChange} required />
                     </div>
                   </div>
                   <div className="col-12">

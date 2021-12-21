@@ -33,6 +33,7 @@ export function AdminAgentsPage(props) {
   useInjectSaga({ key: 'adminAgentsPage', saga });
 
   const [AddNewAgentToggle , setAddNewAgentToggle] = useState(false);
+  const [CanAddOnly , setCanAddOnly] = useState(false);
   const [AgentListingData , setAgentListingData] = useState([]);
   const [AgentEditView , setAgentEditView] = useState(false);
   const [AgentToEditId , setAgentToEditId] = useState(0);
@@ -71,6 +72,8 @@ export function AdminAgentsPage(props) {
 
     }
     setAddNewAgentToggle(false)
+    setCanAddOnly(false)
+    setAgentToEditId(0);
   }
 
   function ActionsAgentCallback(dataToAction) {
@@ -103,7 +106,7 @@ export function AdminAgentsPage(props) {
       <AppContainer>
         <div className="main-page">
           <div className="content-center">
-                <AddNewAgent onChange={AddNewAgentCallback} view={AgentEditView} edit={AgentToEditId} />
+          <AddNewAgent onChange={AddNewAgentCallback} view={AgentEditView} edit={AgentToEditId} add={CanAddOnly}/>
             </div>
         </div>
       </AppContainer>
@@ -117,6 +120,7 @@ export function AdminAgentsPage(props) {
         <div className="content-center">
               <div className="block-header"><a href="javascript:;" onClick={ () => {
                 setAddNewAgentToggle(true);
+                setCanAddOnly(true);
               }} >Add New Agent</a></div>
               <AdminListAgents agents={AgentListingData} onChange={ActionsAgentCallback} />
           </div>
