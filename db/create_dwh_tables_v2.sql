@@ -1,14 +1,33 @@
 -------------------------
--- Create entity table
+-- Create institution table
 -------------------------
-DROP TABLE IF EXISTS [dwh].[dim_entity];
-CREATE TABLE [dwh].[dim_entity](
+DROP TABLE IF EXISTS [dwh].[dim_institution];
+CREATE TABLE [dwh].[dim_institution](
 	[entityID] [int] IDENTITY(1,1) PRIMARY KEY,
 	[entityName] [varchar](255) NOT NULL,
     plaidInsID [varchar](255) NOT NULL,
 	[startDate] [datetime] NOT NULL,
 	[currentFlag] [int] NOT NULL
 ) ON [PRIMARY];
+
+-------------------------
+-- Create entity table
+-------------------------
+DROP TABLE IF EXISTS [dwh].[dim_entity];
+CREATE TABLE [dwh].[dim_entity](
+	[entityID] [int] NOT NULL,
+	[entityName] [varchar](255) NOT NULL,
+	[startDate] [datetime] NOT NULL,
+	[currentFlag] [int] NOT NULL
+) ON [PRIMARY]
+GO
+ALTER TABLE [dwh].[dim_entity] ADD PRIMARY KEY CLUSTERED 
+(
+	[entityID] ASC
+)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+ALTER TABLE [dwh].[dim_entity] ADD  DEFAULT ((1)) FOR [currentFlag]
+GO
 
 -------------------------
 -- Create client table
@@ -26,16 +45,38 @@ CREATE TABLE dwh.dim_client (
 -- Create entity client relationship table
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS dwh.map_entityClientRelation;
-CREATE TABLE dwh.map_entityClientRelation (
-  entityClientRelationID INT IDENTITY(1,1) PRIMARY KEY,
-  entityID INT NOT NULL,
-  clientID INT NOT NULL,
-  share INT NOT NULL,
-  startDate DATETIME NOT NULL,
-  currentFlag INT NOT NULL DEFAULT 1,
-  CONSTRAINT map_entityClientRelation_uk UNIQUE (entityID, clientID),
-  CONSTRAINT fk_entityMapping FOREIGN KEY (entityID) REFERENCES dwh.dim_entity (entityID),
-  CONSTRAINT fk_clientMapping FOREIGN KEY (clientID) REFERENCES dbo.app_users (id));
+CREATE TABLE [dwh].[map_entityClientRelation](
+	[entityClientRelationID] [int] IDENTITY(1,1) NOT NULL,
+	[entityID] [int] NOT NULL,
+	[clientID] [int] NOT NULL,
+	[share] [int] NOT NULL,
+	[startDate] [datetime] NOT NULL,
+	[currentFlag] [int] NOT NULL
+) ON [PRIMARY]
+GO
+ALTER TABLE [dwh].[map_entityClientRelation] ADD PRIMARY KEY CLUSTERED 
+(
+	[entityClientRelationID] ASC
+)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+ALTER TABLE [dwh].[map_entityClientRelation] ADD  CONSTRAINT [map_entityClientRelation_uk] UNIQUE NONCLUSTERED 
+(
+	[entityID] ASC,
+	[clientID] ASC
+)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+ALTER TABLE [dwh].[map_entityClientRelation] ADD  DEFAULT ((1)) FOR [currentFlag]
+GO
+ALTER TABLE [dwh].[map_entityClientRelation]  WITH CHECK ADD  CONSTRAINT [fk_clientMapping] FOREIGN KEY([clientID])
+REFERENCES [dbo].[dim_client] ([clientID])
+GO
+ALTER TABLE [dwh].[map_entityClientRelation] CHECK CONSTRAINT [fk_clientMapping]
+GO
+ALTER TABLE [dwh].[map_entityClientRelation]  WITH CHECK ADD  CONSTRAINT [fk_entityMapping] FOREIGN KEY([entityID])
+REFERENCES [dwh].[dim_entity] ([entityID])
+GO
+ALTER TABLE [dwh].[map_entityClientRelation] CHECK CONSTRAINT [fk_entityMapping]
+GO
 
 -- -----------------------------------------------------
 -- Create account table
