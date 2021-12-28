@@ -1,17 +1,17 @@
-CREATE PROCEDURE dwh.v2_populateDWH
+CREATE PROCEDURE [dwh].[v2_populateDWH]
 AS
 
 -------------------------
--- Populate entity table
+-- Populate institution table
 -------------------------
-INSERT INTO dwh.dim_entity
+INSERT INTO dwh.dim_institution
 SELECT 
     [name] AS entityName, 
     institution_id AS plaidInsID,
     created_at AS startDate, 
     1 AS currentFlag
 FROM [dbo].[plaid_institutions] pi
-LEFT OUTER JOIN dwh.dim_entity ent 
+LEFT OUTER JOIN dwh.dim_institution ent 
 ON ent.entityName = pi.[name]
 WHERE ent.entityName IS NULL
 
@@ -30,26 +30,42 @@ ON cli.clientName = au.fullname
 WHERE au.[role] = 'Client' AND cli.clientName IS NULL
 
 -------------------------
+-- Populate entity table
+-------------------------
+INSERT INTO dwh.dim_entity
+SELECT 
+    au.id AS userID,
+    au.fullname AS entityName,
+    au.created_at AS startDate,
+    1 AS currentFlag
+FROM app_users au
+LEFT JOIN dwh.dim_entity ent
+ON ent.entityName = au.fullname
+WHERE au.[role] = 'Client' AND ent.entityName IS NULL
+
+-------------------------
 -- Populate entity & client relationship table
 -------------------------
 INSERT INTO dwh.map_entityClientRelation (entityID, clientID, share, startDate, currentFlag)
 SELECT 
-    ent.entityID AS entityID, usr.id AS clientID, 100 AS share, GETDATE() AS startDate, 1 AS currentFlag
-FROM app_accounts_token aat
-INNER JOIN dwh.dim_entity ent
-ON aat.account_name = ent.entityName
-INNER JOIN dbo.app_users usr
-ON usr.id = aat.client_id
-LEFT JOIN dwh.map_entityClientRelation ecr
-ON ecr.entityID = ent.entityID AND ecr.clientID = usr.id
-WHERE ecr.entityID IS NULL AND ecr.clientID IS NULL
+    ent.entityID AS entityID, 
+    cli.clientID AS clientID, 
+    100 AS share,
+    ent.startDate AS startDate,
+    1 AS currentFlag
+FROM dwh.dim_client cli 
+INNER JOIN dwh.dim_entity ent 
+ON cli.userID = ent.entityID
+LEFT JOIN dwh.map_entityClientRelation ecr 
+ON cli.clientID = ecr.clientID AND ent.entityID = ecr.entityID
+WHERE ecr.clientID IS NULL AND ecr.entityID IS NULL
 
 -------------------------
 -- Populate account table - dupes added
 -------------------------
 INSERT INTO dwh.dim_account
 SELECT 
-    e.entityID,
+    inst.entityID,
     bal.b_name AS accountName,
     bal.b_official_name AS accountDescription,
     bal.b_type AS accountType,
@@ -57,15 +73,15 @@ SELECT
     CAST(GETDATE() AS DATE) AS startDate,
     1 AS currentFlag
 FROM [dbo].[plaid_balance] bal
-INNER JOIN dwh.dim_entity e
-ON bal.b_institution_id = e.plaidInsID
+INNER JOIN dwh.dim_institution inst
+ON bal.b_institution_id = inst.plaidInsID
 LEFT JOIN dwh.dim_account acc 
-ON e.entityID = acc.entityID AND bal.b_name = acc.accountName AND bal.b_type = acc.accountType 
+ON inst.entityID = acc.entityID AND bal.b_name = acc.accountName AND bal.b_type = acc.accountType 
 WHERE acc.accountName IS NULL AND acc.accountType IS NULL 
-GROUP BY e.entityID, bal.b_name, bal.b_official_name, bal.b_type, bal.b_subtype
+GROUP BY inst.entityID, bal.b_name, bal.b_official_name, bal.b_type, bal.b_subtype
     UNION
 SELECT 
-    e.entityID,
+    inst.entityID,
     sec.s_name AS accountName,
     sec.s_ticker_symbol AS accountDescription,
     sec.s_type AS accountType,
@@ -73,12 +89,12 @@ SELECT
     CAST(GETDATE() AS DATE) AS startDate,
     1 AS currentFlag
 FROM [dbo].[plaid_investments_securities] sec
-LEFT JOIN dwh.dim_entity e
-ON sec.s_institution_id = e.plaidInsID
+LEFT JOIN dwh.dim_institution inst
+ON sec.s_institution_id = inst.plaidInsID
 LEFT JOIN dwh.dim_account acc 
 ON acc.accountName = sec.s_name 
 WHERE acc.accountName IS NULL AND acc.accountType IS NULL AND acc.accountSubType IS NULL
-GROUP BY e.entityID, sec.s_name, sec.s_ticker_symbol, sec.s_type
+GROUP BY inst.entityID, sec.s_name, sec.s_ticker_symbol, sec.s_type
 
 -------------------------
 -- Populate holdings table
@@ -124,10 +140,10 @@ SELECT
     CAST(bal.created_at AS DATE) AS startDate
 INTO #temp_balance
 FROM [dbo].[plaid_balance] bal
-INNER JOIN dwh.dim_entity ent
-ON bal.b_institution_id = ent.plaidInsID
+INNER JOIN dwh.dim_institution inst
+ON bal.b_institution_id = inst.plaidInsID
 INNER JOIN dwh.map_entityClientRelation ecr 
-ON ent.entityID = ecr.entityID AND bal.client_id = ecr.clientID
+ON inst.entityID = ecr.entityID AND bal.client_id = ecr.clientID
 INNER JOIN dwh.dim_account acc 
 ON bal.b_name = acc.accountName AND bal.b_type = acc.accountType AND ecr.entityID = acc.entityID
 
