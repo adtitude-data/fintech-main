@@ -61,7 +61,7 @@ ON cli.clientID = ecr.clientID AND ent.entityID = ecr.entityID
 WHERE ecr.clientID IS NULL AND ecr.entityID IS NULL
 
 -------------------------
--- Populate account table - dupes added
+-- Populate account table
 -------------------------
 INSERT INTO dwh.dim_account
 SELECT 
@@ -159,3 +159,61 @@ WHERE NOT EXISTS
     bal.balanceCurrent = tbal.balanceCurrent AND
     bal.startDate = tbal.startDate 
 )
+
+-------------------------
+-- Populate investments table
+-------------------------
+INSERT INTO dwh.dim_investment
+SELECT
+    h.account_id AS accountID, 
+    NULL AS clientID,
+    NULL AS institutionID,
+    'Holding' AS investmentType,
+    NULL AS securityName,
+    NULL AS securityType,
+    NULL AS tickerSymbol,
+    NULL AS isCashEquivalentFlag,
+    h.h_cost_basis AS costBasis,  
+    NULL AS closingPrice,
+    NULL AS closingPriceAsOfDate,
+    h.h_institution_price AS institutionPrice, 
+    h.h_institution_price_as_of AS institutionPriceAsOf, 
+    h.h_institution_value AS institutionValue, 
+    h.h_iso_currency_code AS currencyCode, 
+    NULL AS isin,
+    h.[h_quantity] AS quantity,
+    h.[created_at] AS startDate
+FROM plaid_investments_holdings h
+LEFT JOIN dwh.dim_investment inv 
+ON h.account_id = inv.accountID AND h.h_cost_basis = inv.costBasis AND h.h_institution_price = inv.institutionPrice AND h.h_institution_value = inv.institutionValue AND h.created_at = inv.startDate
+WHERE inv.accountID IS NULL AND inv.costBasis IS NULL AND inv.institutionPrice IS NULL AND inv.institutionValue IS NULL AND inv.startDate IS NULL
+    UNION ALL
+SELECT
+    s.account_id AS accountID,
+    --s.[client_id] AS clientID,
+    cli.clientID AS clientID,
+    inst.entityID AS institutionID,
+    'Security' AS investmentType,
+    s.[s_name] AS securityName,
+    s.[s_type] AS securityType,
+    CASE WHEN s.[s_ticker_symbol] IS NULL THEN 'Unknown' ELSE s.[s_ticker_symbol] END AS tickerSymbol,
+    s.[s_is_cash_equivalent] AS isCashEquivalentFlag,
+    NULL AS costBasis,
+    s.[s_close_price] AS closingPrice,
+    s.[s_close_price_as_of] AS closingPriceAsOfDate,
+    NULL AS institutionPrice, 
+    NULL AS institutionPriceAsOf, 
+    NULL AS institutionValue,
+    s.[s_iso_currency_code] AS currencyCode,
+    s.[s_isin] AS isin,
+    NULL AS quantity,
+    s.[created_at] AS startDate
+FROM plaid_investments_securities s
+LEFT JOIN dwh.dim_institution inst 
+ON s.s_institution_id = inst.plaidInsID
+LEFT JOIN dwh.dim_client cli 
+ON s.client_id = cli.userID
+LEFT JOIN dwh.dim_investment inv 
+ON s.account_id = inv.accountID AND cli.clientID = inv.clientID AND s.s_name = inv.securityName AND s.s_type = inv.securityType AND ISNULL(s.s_ticker_symbol, 'Unknown') = inv.tickerSymbol AND s.created_at = inv.startDate
+WHERE inv.accountID IS NULL AND inv.clientID IS NULL AND inv.securityName IS NULL AND inv.securityType IS NULL AND inv.tickerSymbol IS NULL AND inv.startDate IS NULL
+
