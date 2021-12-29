@@ -163,7 +163,7 @@ WHERE NOT EXISTS
 -------------------------
 -- Populate investments table
 -------------------------
-INSERT INTO dwh.dim_investment
+INSERT INTO dwh.fact_investment
 SELECT
     h.account_id AS accountID, 
     NULL AS clientID,
@@ -184,7 +184,7 @@ SELECT
     h.[h_quantity] AS quantity,
     h.[created_at] AS startDate
 FROM plaid_investments_holdings h
-LEFT JOIN dwh.dim_investment inv 
+LEFT JOIN dwh.fact_investment inv 
 ON h.account_id = inv.accountID AND h.h_cost_basis = inv.costBasis AND h.h_institution_price = inv.institutionPrice AND h.h_institution_value = inv.institutionValue AND h.created_at = inv.startDate
 WHERE inv.accountID IS NULL AND inv.costBasis IS NULL AND inv.institutionPrice IS NULL AND inv.institutionValue IS NULL AND inv.startDate IS NULL
     UNION ALL
@@ -213,7 +213,6 @@ LEFT JOIN dwh.dim_institution inst
 ON s.s_institution_id = inst.plaidInsID
 LEFT JOIN dwh.dim_client cli 
 ON s.client_id = cli.userID
-LEFT JOIN dwh.dim_investment inv 
+LEFT JOIN dwh.fact_investment inv 
 ON s.account_id = inv.accountID AND cli.clientID = inv.clientID AND s.s_name = inv.securityName AND s.s_type = inv.securityType AND ISNULL(s.s_ticker_symbol, 'Unknown') = inv.tickerSymbol AND s.created_at = inv.startDate
 WHERE inv.accountID IS NULL AND inv.clientID IS NULL AND inv.securityName IS NULL AND inv.securityType IS NULL AND inv.tickerSymbol IS NULL AND inv.startDate IS NULL
-
