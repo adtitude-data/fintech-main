@@ -45,6 +45,7 @@ CREATE TABLE dwh.dim_client (
 -- Create entity client relationship table
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS dwh.map_entityClientRelation;
+
 CREATE TABLE [dwh].[map_entityClientRelation](
 	[entityClientRelationID] [int] IDENTITY(1,1) NOT NULL,
 	[entityID] [int] NOT NULL,
@@ -67,30 +68,38 @@ ALTER TABLE [dwh].[map_entityClientRelation] ADD  CONSTRAINT [map_entityClientRe
 GO
 ALTER TABLE [dwh].[map_entityClientRelation] ADD  DEFAULT ((1)) FOR [currentFlag]
 GO
-ALTER TABLE [dwh].[map_entityClientRelation]  WITH CHECK ADD  CONSTRAINT [fk_clientMapping] FOREIGN KEY([clientID])
-REFERENCES [dbo].[dim_client] ([clientID])
+ALTER TABLE [dwh].[map_entityClientRelation]  WITH CHECK ADD  CONSTRAINT [fk_entityMapping] FOREIGN KEY([entityID]) REFERENCES [dwh].[dim_entity] ([entityID])
 GO
-ALTER TABLE [dwh].[map_entityClientRelation] CHECK CONSTRAINT [fk_clientMapping]
-GO
-ALTER TABLE [dwh].[map_entityClientRelation]  WITH CHECK ADD  CONSTRAINT [fk_entityMapping] FOREIGN KEY([entityID])
-REFERENCES [dwh].[dim_entity] ([entityID])
+ALTER TABLE [dwh].[map_entityClientRelation]  WITH CHECK ADD  CONSTRAINT [fk_clientMapping] FOREIGN KEY([clientID]) REFERENCES [dwh].[dim_client] ([clientID])
 GO
 ALTER TABLE [dwh].[map_entityClientRelation] CHECK CONSTRAINT [fk_entityMapping]
 GO
+ALTER TABLE [dwh].[map_entityClientRelation] CHECK CONSTRAINT [fk_clientMapping]
+GO
+
 
 -- -----------------------------------------------------
 -- Create account table
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS dwh.dim_account;
-CREATE TABLE dwh.dim_account (
-  accountID INT IDENTITY(1,1) PRIMARY KEY,
-  entityID INT NULL,
-  accountName VARCHAR(255) NOT NULL,
-  accountDescription VARCHAR(255) NULL,
-  accountType VARCHAR(255) NOT NULL,
-  accountSubType VARCHAR(255) NOT NULL,
-  startDate DATETIME NOT NULL,
-  currentFlag INT NOT NULL DEFAULT 1);
+CREATE TABLE [dwh].[dim_account](
+	[accountID] [int] IDENTITY(1,1) NOT NULL,
+	[institutionID] [int] NULL,
+	[accountName] [varchar](255) NOT NULL,
+	[accountDescription] [varchar](255) NULL,
+	[accountType] [varchar](255) NOT NULL,
+	[accountSubType] [varchar](255) NOT NULL,
+	[startDate] [datetime] NOT NULL,
+	[currentFlag] [int] NOT NULL
+) ON [PRIMARY]
+GO
+ALTER TABLE [dwh].[dim_account] ADD PRIMARY KEY CLUSTERED 
+(
+	[accountID] ASC
+)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+ALTER TABLE [dwh].[dim_account] ADD  DEFAULT ((1)) FOR [currentFlag]
+GO
   
 -------------------------
 -- Create investments table
