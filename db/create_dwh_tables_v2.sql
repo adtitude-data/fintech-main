@@ -91,7 +91,36 @@ CREATE TABLE dwh.dim_account (
   accountSubType VARCHAR(255) NOT NULL,
   startDate DATETIME NOT NULL,
   currentFlag INT NOT NULL DEFAULT 1);
+  
+-------------------------
+-- Create investments table
+-------------------------
+DROP TABLE IF EXISTS [dwh].[dim_investment];
+CREATE TABLE [dwh].[dim_investment](
+    investmentID INT IDENTITY(1,1) PRIMARY KEY,
+    accountID INT,
+    clientID INT, 
+    institutionID INT, -- FK
+    investmentType VARCHAR(55),
+    securityName VARCHAR(255),
+    securityType VARCHAR(255),
+    tickerSymbol VARCHAR(55),
+    isCashEquivalentFlag INT,
+    costBasis INT,
+    closingPrice INT,
+    closingPriceAsOfDate DATE,
+    institutionPrice INT ,
+    institutionPriceAsOf DATE,
+    institutionValue INT ,
+    currencyCode VARCHAR(55),
+    isin VARCHAR(55),
+    quantity INT,
+    startDate DATETIME
+) ON [PRIMARY];
 
+ALTER TABLE [dwh].[dim_investment] WITH CHECK ADD  CONSTRAINT [fk_accountID] FOREIGN KEY([accountID]) REFERENCES [dwh].[dim_account] ([accountID])
+ALTER TABLE [dwh].[dim_investment] WITH CHECK ADD  CONSTRAINT [fk_clientID] FOREIGN KEY([clientID]) REFERENCES [dwh].[dim_client] ([clientID])
+ALTER TABLE [dwh].[dim_investment] WITH CHECK ADD  CONSTRAINT [fk_institutionID] FOREIGN KEY([institutionID]) REFERENCES [dwh].[dim_institution] ([entityID])
 
 -- -----------------------------------------------------
 -- Create holdings table
