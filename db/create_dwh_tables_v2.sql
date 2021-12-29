@@ -106,16 +106,16 @@ CREATE TABLE [dwh].[dim_investment](
     securityType VARCHAR(255),
     tickerSymbol VARCHAR(55),
     isCashEquivalentFlag INT,
-    costBasis INT,
-    closingPrice INT,
+    costBasis DECIMAL(10,2),
+    closingPrice DECIMAL(20,5),
     closingPriceAsOfDate DATE,
-    institutionPrice INT ,
+    institutionPrice DECIMAL(20,5),
     institutionPriceAsOf DATE,
-    institutionValue INT ,
+    institutionValue DECIMAL(20,5),
     currencyCode VARCHAR(55),
     isin VARCHAR(55),
-    quantity INT,
-    startDate DATETIME
+    quantity DECIMAL(25,8),
+    startDate DATETIMEOFFSET(7)
 ) ON [PRIMARY];
 
 ALTER TABLE [dwh].[dim_investment] WITH CHECK ADD  CONSTRAINT [fk_accountID] FOREIGN KEY([accountID]) REFERENCES [dwh].[dim_account] ([accountID])
