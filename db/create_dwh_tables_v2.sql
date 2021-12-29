@@ -95,8 +95,8 @@ CREATE TABLE dwh.dim_account (
 -------------------------
 -- Create investments table
 -------------------------
-DROP TABLE IF EXISTS [dwh].[dim_investment];
-CREATE TABLE [dwh].[dim_investment](
+DROP TABLE IF EXISTS [dwh].[fact_investment];
+CREATE TABLE [dwh].[fact_investment](
     investmentID INT IDENTITY(1,1) PRIMARY KEY,
     accountID INT,
     clientID INT, 
@@ -118,9 +118,9 @@ CREATE TABLE [dwh].[dim_investment](
     startDate DATETIMEOFFSET(7)
 ) ON [PRIMARY];
 
-ALTER TABLE [dwh].[dim_investment] WITH CHECK ADD  CONSTRAINT [fk_accountID] FOREIGN KEY([accountID]) REFERENCES [dwh].[dim_account] ([accountID])
-ALTER TABLE [dwh].[dim_investment] WITH CHECK ADD  CONSTRAINT [fk_clientID] FOREIGN KEY([clientID]) REFERENCES [dwh].[dim_client] ([clientID])
-ALTER TABLE [dwh].[dim_investment] WITH CHECK ADD  CONSTRAINT [fk_institutionID] FOREIGN KEY([institutionID]) REFERENCES [dwh].[dim_institution] ([entityID])
+ALTER TABLE [dwh].[fact_investment] WITH CHECK ADD  CONSTRAINT [fk_accountID] FOREIGN KEY([accountID]) REFERENCES [dwh].[dim_account] ([accountID])
+ALTER TABLE [dwh].[fact_investment] WITH CHECK ADD  CONSTRAINT [fk_clientID] FOREIGN KEY([clientID]) REFERENCES [dwh].[dim_client] ([clientID])
+ALTER TABLE [dwh].[fact_investment] WITH CHECK ADD  CONSTRAINT [fk_institutionID] FOREIGN KEY([institutionID]) REFERENCES [dwh].[dim_institution] ([entityID])
 
 -- -----------------------------------------------------
 -- Create holdings table
