@@ -15,8 +15,8 @@ GO
 -------------------------
 DROP TABLE IF EXISTS [dwh].[dim_institution];
 CREATE TABLE [dwh].[dim_institution](
-	[entityID] [int] IDENTITY(1,1) PRIMARY KEY,
-	[entityName] [varchar](255) NOT NULL,
+	[instID] [int] IDENTITY(1,1) PRIMARY KEY,
+	[instName] [varchar](255) NOT NULL,
     plaidInsID [varchar](255) NOT NULL,
 	[recordCreatedDate] [datetime] NOT NULL
 ) ON [PRIMARY];
