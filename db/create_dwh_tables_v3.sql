@@ -121,5 +121,4 @@ CREATE TABLE dwh.fact_balance (
   balanceCurrent VARCHAR(55) NULL,
   currencyCode VARCHAR(55) NULL,
   balanceLimit VARCHAR(55) NULL,
-  staticComponent BIGINT NULL,
   recordCreatedDate DATE NOT NULL)
