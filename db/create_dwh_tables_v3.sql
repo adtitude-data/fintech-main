@@ -94,6 +94,7 @@ CREATE TABLE [dwh].[dim_account](
 	[accountID] [int] IDENTITY(1,1) NOT NULL,
 	[institutionID] [int] NULL,
 	[accountName] [varchar](255) NOT NULL,
+    [accountMask] VARCHAR(255) NULL,
 	[accountDescription] [varchar](255) NULL,
 	[accountType] [varchar](255) NOT NULL,
 	[accountSubType] [varchar](255) NOT NULL,
@@ -105,8 +106,6 @@ ALTER TABLE [dwh].[dim_account] ADD PRIMARY KEY CLUSTERED
 	[accountID] ASC
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-ALTER TABLE [dwh].[dim_account] ADD  DEFAULT ((1)) FOR [currentFlag]
-GO
 
 -- -----------------------------------------------------
 -- Create balance table
@@ -115,6 +114,8 @@ DROP TABLE IF EXISTS dwh.fact_balance ;
 CREATE TABLE dwh.fact_balance (
   balanceID INT IDENTITY(1,1) PRIMARY KEY,
   accountID INT NOT NULL,
+  accountName VARCHAR(255) NULL,
+  accountMask VARCHAR(255) NULL,
   entityClientRelationID INT NOT NULL,
   balanceAvailable VARCHAR(55) NULL,
   balanceCurrent VARCHAR(55) NULL,
