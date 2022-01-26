@@ -68,6 +68,7 @@ INSERT INTO dwh.dim_account
 SELECT 
     inst.instID,
     bal.b_name AS accountName,
+    bal.b_mask AS accountMask,
     bal.b_official_name AS accountDescription,
     bal.b_type AS accountType,
     bal.b_subtype AS accountSubType,
@@ -78,11 +79,12 @@ ON bal.b_institution_id = inst.plaidInsID
 LEFT JOIN dwh.dim_account acc 
 ON inst.instID = acc.institutionID AND bal.b_name = acc.accountName AND bal.b_type = acc.accountType 
 WHERE acc.accountName IS NULL AND acc.accountType IS NULL 
-GROUP BY inst.instID, bal.b_name, bal.b_official_name, bal.b_type, bal.b_subtype
+GROUP BY inst.instID, bal.b_name, bal.b_mask, bal.b_official_name, bal.b_type, bal.b_subtype
     UNION
 SELECT 
     inst.instID,
     sec.s_name AS accountName,
+    '' AS accountMask,
     sec.s_ticker_symbol AS accountDescription,
     sec.s_type AS accountType,
     'Securities' AS accountSubType,
@@ -102,12 +104,13 @@ DROP TABLE IF EXISTS #temp_balance
 
 SELECT 
     acc.accountID AS accountID, 
+    bal.b_name AS accountName,
+    bal.b_mask AS accountMask,
     ecr.entityClientRelationID AS entityClientRelationID,
     bal.b_blanace_available AS balanceAvailable,
     bal.b_blanace_current AS balanceCurrent,
     bal.b_blanace_iso_currency_code AS currencyCode,
     bal.b_blanace_limit AS balanceLimit,
-    NULL AS staticComponent,
     CAST(bal.created_at AS DATE) AS recordCreatedDate
 INTO #temp_balance
 FROM [dbo].[plaid_balance] bal
