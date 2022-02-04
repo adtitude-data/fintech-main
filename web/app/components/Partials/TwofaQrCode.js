@@ -91,7 +91,6 @@ function TwofaQrCode(props) {
     function _handleSubmit (e){
       e.preventDefault();
 
-
     }
 
     const qrForm = <><div className="col-12">
