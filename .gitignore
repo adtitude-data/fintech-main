@@ -107,6 +107,5 @@ dist
 *.zip
 *.rar
 
-server/
-server-new/node_modules/
+server/node_modules/
 web/node_modules/
