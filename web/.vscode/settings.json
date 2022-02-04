@@ -1,0 +1,8 @@
+{
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/8869a2dc-17fc-4684-9367-34092eeced7d/resourceGroups/Private_client/providers/Microsoft.Web/sites/secureift",
+    "appService.deploySubpath": "."
+}

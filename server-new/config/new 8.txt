@@ -1,0 +1,8 @@
+###
+Server Side
+run the following commands
+
+# npm install
+# Create ENV config file
+# npm run migrate
+
