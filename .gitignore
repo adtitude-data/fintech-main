@@ -104,8 +104,8 @@ dist
 .tern-port
 
 
-.zip
-.rar
+*.zip
+*.rar
 
 server/
 server-new/node_modules/
