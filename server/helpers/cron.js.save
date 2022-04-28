@@ -1,0 +1,114 @@
+require("dotenv").config();
+const cron = require('node-cron');
+var express = require("express");
+var router = express.Router();
+const axios = require('axios');
+
+const fs = require("fs");
+const path = require("path");
+const Sequelize = require("sequelize");
+const basename = path.basename(__filename);
+const env = process.env.NODE_ENV || "development";
+const config = require(__dirname + "/../config/config.js")[env];
+const db = {};
+
+const sequelize = new Sequelize(config);
+const queryInterface = sequelize.getQueryInterface();
+const { QueryTypes } = require('sequelize');
+
+var router = express.Router();
+const { StatusCodes } = require("http-status-codes");
+const models = require("../models");
+const Queue = require('bull');
+const myJobQueue = new Queue('myJob');
+
+
+var cronJob = async () => {
+    cron.schedule('0 */3 * * *', (ob) => {
+    //### cron.schedule('5 */5 * * * *', (ob) => {
+        runCPA().then( () => { console.log('all process completed') });
+    });
+
+    //runCPA().then( () => { console.log('all process completed')}); 
+    
+};
+
+runCPA = async () => {
+    var accounts = await runAccountsLogs();
+    var sp_name = 'v3_populateDWH';    /* var res = await addCronJobDbResp(0,0,sp_name, 'Started')
+    var spRes = await runSP();
+    if(spRes){
+        addCronJobDbResp(0,0,sp_name, 'Completed')
+    }else{
+        addCronJobDbResp(0,0,sp_name, 'Failed')
+    }
+    var res = await addCronJobDbResp(0,0,sp_name, 'Finished')
+    console.log('lastprint'); */
+}
+
+addCronJobDbResp = async (client_id , account_id , jobName , status) => {
+    try { 
+        var dateString = 'GETDATE()';
+        if(process.env.DB_DIALECT == 'mysql') dateString = 'NOW()';
+        var queryText = `
+            INSERT INTO app_cron_jobs (client_id, account_id, jobName, status , created_at , updated_at)
+            VALUES ('${client_id}', '${account_id}', '${jobName}', '${status}', ${dateString}, ${dateString});
+        `;
+        var resStatus = await sequelize.query(queryText,{type: sequelize.QueryTypes.INSERT});
+        console.log('resStatus',resStatus);
+      } catch (error) {
+        console.log( 'db error',error);
+      }
+}
+
+runAccountsLogs = async () => {
+    var accounts = await getAccounts();
+    var res = await addCronJobDbResp(0,0, 'Retrieve Data', 'Started')
+    for(var i = 0 ; i < accounts.length ; i++){
+        var r = await axios.get('http://localhost:'+process.env.PORT+'/api/v1/plaid/cronjob/balance/' + accounts[i].id)
+        if(r.status == 200){
+            var res = await addCronJobDbResp(accounts[i].client_id,accounts[i].id, 'balance', 'Completed')
+        }else{
+            var res = await addCronJobDbResp(accounts[i].client_id,accounts[i].id, 'balance', 'Failed')
+        }
+        var r = await  axios.get('http://localhost:'+process.env.PORT+'/api/v1/plaid/cronjob/liabilities/' + accounts[i].id)
+        if(r.status == 200){
+            var res = await addCronJobDbResp(accounts[i].client_id,accounts[i].id, 'liabilities', 'Completed')
+        }else{
+            var res = await addCronJobDbResp(accounts[i].client_id,accounts[i].id, 'liabilities', 'Failed')
+        }
+        var r = await axios.get('http://localhost:'+process.env.PORT+'/api/v1/plaid/cronjob/investment-holdings/' + accounts[i].id)
+        if(r.status == 200){
+            var res = await addCronJobDbResp(accounts[i].client_id,accounts[i].id, 'investment-holdings', 'Completed')
+        }else{
+            var res = await addCronJobDbResp(accounts[i].client_id,accounts[i].id, 'investment-holdings', 'Failed')
+        }
+    }
+    var res = await addCronJobDbResp(0,0, 'Retrieve Data', 'Completed')
+    return accounts;
+}
+
+runSP = async () => {
+   
+    var data = sequelize.query(`
+        DECLARE	@return_value int
+        EXEC	@return_value = [dwh].[v3_populateDWH]
+        SELECT	'Return Value' = @return_value`).then((response) => {
+        return true;
+    }).catch((error) => {
+        return false;
+    }); 
+    return data;
+}
+
+module.exports = {
+  cronJob,
+};
+
+const getAccounts = async () => {
+    var x = await sequelize.query("SELECT * FROM app_accounts_token", { type: QueryTypes.SELECT });
+    /* var listOfAccounts = await sequelize.query({
+        attributes: ['client_id', 'account_name','inst_id','item_id', 'access_token']
+    } ); */
+    return x;
+} 

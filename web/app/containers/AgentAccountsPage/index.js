@@ -23,10 +23,13 @@ import AppContainer from 'components/Partials/AppContainer';
 import PlaidAddAccountButton from 'components/Partials/PlaidAddAccountButton';
 import ListClientAccounts from 'components/Pages/Admin/Accounts/ListClientAccounts';
 import AddNewClientAccount from 'components/Pages/Admin/Accounts/AddNewClientAccount';
+import DeleteAccountAlertWarning from '../../components/SweetAlert/DeleteAccountAlertWarning';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from '../App/api';
 import Loader from "react-loader-spinner";
+import Swal from "sweetalert2";
+
 
 export function AgentAccountsPage(props) {
   useInjectReducer({ key: 'agentAccountsPage', reducer });
@@ -37,7 +40,7 @@ export function AgentAccountsPage(props) {
   const [ClientAccountDeltedData , setClientAccountDeltedData] = useState([]);
   const [ClientAccountEditView , setClientAccountEditView] = useState(false);
   const [ClientAccountToEditId , setClientAccountToEditId] = useState(0);
-  const [loader, setLoader] = useState(false);
+  const [loader, setLoader] = useState(true);
 
 
   const toast_success_message = (v , cb) => {
@@ -81,24 +84,26 @@ export function AgentAccountsPage(props) {
 
   const generateToken = useCallback(
     async (paymentInitiation) => {
-      const path = paymentInitiation
-        ? "plaid/create_link_token_for_payment"
-        : "plaid/create_link_token";
+      /* const path = paymentInitiation
+        ? "plaid/create_link_token_for_payment/" + userInfo.id
+        : "plaid/create_link_token/" + userInfo.id; */
+      const path = "plaid/create_link_token/" + props.match.params.id;
       const response = await fetch(process.env.REACT_APP_SERVER_PATH + path, {
         method: "POST",
       });
       if (!response.ok) {
+
         setLinkToken(null);
         return;
       }
       const data = await response.json();
+      console.log('data',data)
       if (data) {
         if (data.error != null) {
           setLinkToken(null);
           setLinkTokenError(data.error);
           return;
         }
-
         setLinkToken(data.link_token);
       }
       localStorage.setItem("link_token", data.link_token); //to use later for Oauth
@@ -115,9 +120,16 @@ export function AgentAccountsPage(props) {
           name: data.data.fullname,
         });
         api.getClientsAccounts(data.data.id).then( (data) => {
+          console.log('data.data',data);
           var d = [] ;
           var x = [] ;
-          if(data.data) d = data.data ;
+          if(data.data) {
+            if(data.data.length > 0){
+              d = data.data ;
+            }else{
+              setLoader(false);
+            }
+          }
           setClientAccountListingData(d);
         });
       }
@@ -127,10 +139,10 @@ export function AgentAccountsPage(props) {
       const { paymentInitiation } = await getInfo(); // used to determine which path to take when generating token
       // do not generate a new token for OAuth redirect; instead
       // setLinkToken from localStorage
-      if (window.location.href.includes("?oauth_state_id=")) {
+      /* if (window.location.href.includes("?oauth_state_id=")) {
         setLinkToken(localStorage.getItem("link_token"));
         return;
-      }
+      } */
       generateToken(paymentInitiation);
     };
     init();
@@ -161,32 +173,82 @@ export function AgentAccountsPage(props) {
       setAddNewClientToggle(true);
       setClientAccountEditView(true);
       setClientAccountToEditId(dataToAction.id);
+    }else if(dataToAction.call == 'updateLoader'){
+      setLoader(dataToAction.loader);
     }else if(dataToAction.call == 'remove'){
-      setLoader(true);
-      api.deleteAgentAccounts(dataToAction.id , dataToAction.account_id).then((removeRes) => {
-        setLoader(false);
-        if(removeRes.status == 200){
-          location.reload();
-          /* for(var i = 0 ; i < ClientAccountListingData.length ; i++){
-            if(ClientAccountListingData[i].id == dataToAction.id) {
-              var d = [...ClientAccountListingData];
-              d.splice(i, 1);
-              setClientAccountListingData(d);
-              toast_success_message('Account has been removed from the system.' , function () {}) ;
-              break;
-            }
-          }*/
-        }
+      //setLoader(true);
+      Swal.fire({
+        title: "Are you sure?",
+          type: "warning",
+          text: "Your account will be delete only from app side. If you want to revoke it from the plaid side you have to remove all the accounts of relevent institute!",
+          footer: "",
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'Yes, delete it!',
+          onOpen: () => {
+              // code
+          }
+      }).then((result) => {
+          if (result.value) {
+            setLoader(true);
+            api.deleteAgentAccounts(dataToAction.id , dataToAction.account_id).then((removeRes) => {
+              if(removeRes.status == 200){
+                setLoader(false);
+                Swal.fire(
+                  'Deleted!',
+                  'Your account has been deleted.',
+                  'success'
+                ).then( () => {
+                  location.reload();
+                  /* for(var i = 0 ; i < ClientAccountListingData.length ; i++){
+                    if(ClientAccountListingData[i].id == dataToAction.id) {
+                      var d = [...ClientAccountListingData];
+                      d.splice(i, 1);
+                      setClientAccountListingData(d);
+                      toast_success_message('Account has been removed from the system.' , function () {}) ;
+                      break;
+                    }
+                  }*/
+                });
+              }
+            });
+
+          }
       });
     }
   }
 
   function PlaidButtonCallback (dataToAction) {
+    console.log('dataToAction', dataToAction);
+    setLoader(true);
     if(dataToAction.status == 200){
       api.getClientsAccounts(props.match.params.id).then( (data) => {
         var d = [] ;
-        if(data.data) d = data.data ;
+        if(data.data){
+          if(data.data.length > 0){
+            d = data.data ;
+          }else{
+            setLoader(false);
+          }
+        }
         setClientAccountListingData(d);
+      });
+    }else if(dataToAction.status == 300){
+      Swal.fire(
+        'Error',
+        'This institution is already added with this client. If you want to re-add this institute, then you first have to remove the old institute accounts from the list.',
+        'error'
+      ).then( () => {
+        setLoader(false);
+      });
+    }else{
+      Swal.fire(
+        'Error',
+        'Unable to proccess the data at the moment, please refresh the page and try agian later.',
+        'error'
+      ).then( () => {
+        setLoader(false);
       });
     }
   }

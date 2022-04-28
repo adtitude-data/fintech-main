@@ -1,3 +1,4 @@
+
 require("dotenv").config();
 const cron = require('node-cron');
 var express = require("express");
@@ -22,46 +23,41 @@ const models = require("../models");
 const Queue = require('bull');
 const myJobQueue = new Queue('myJob');
 
-/* myJobQueue.process(function(job,done){
-    // your job complex operations 
-    console.log('add',job.data.jobData)
-    done();
-})
- */
 
 var cronJob = async () => {
     cron.schedule('0 23 * * *', (ob) => {
-    //cron.schedule('5 */5 * * * *', (ob) => {
-        runCPA().then( () => {
-            console.log('all process completed')
-        });
+    //### cron.schedule('5 */5 * * * *', (ob) => {
+        runCPA().then( () => { console.log('all process completed') });
     });
 
+// runCPA().then( () => { console.log('all process completed')}); 
     
 };
 
 runCPA = async () => {
-    console.log('running a task,',ob);
+    var trunc_plaid_data = await trunc_plaid_app_data();
     var accounts = await runAccountsLogs();
-    var db_sch = 'dwh.' ; //'dwh.';
+var mostrecentflag_status = await mostrecentflag_check();
+
     var sp_name = 'v3_populateDWH';
     var res = await addCronJobDbResp(0,0,sp_name, 'Started')
-    var spRes = await runSP(db_sch , sp_name);
-    console.log('spRes',spRes);
+    var spRes = await runSP();
     if(spRes){
         addCronJobDbResp(0,0,sp_name, 'Completed')
     }else{
         addCronJobDbResp(0,0,sp_name, 'Failed')
     }
     var res = await addCronJobDbResp(0,0,sp_name, 'Finished')
-    console.log('lastprint');
+    console.log('lastprint'); 
 }
 
 addCronJobDbResp = async (client_id , account_id , jobName , status) => {
-    try {
+    try { 
+        var dateString = 'GETDATE()';
+        if(process.env.DB_DIALECT == 'mysql') dateString = 'NOW()';
         var queryText = `
             INSERT INTO app_cron_jobs (client_id, account_id, jobName, status , created_at , updated_at)
-            VALUES ('${client_id}', '${account_id}', '${jobName}', '${status}', NOW(), NOW());
+            VALUES ('${client_id}', '${account_id}', '${jobName}', '${status}', ${dateString}, ${dateString});
         `;
         var resStatus = await sequelize.query(queryText,{type: sequelize.QueryTypes.INSERT});
         console.log('resStatus',resStatus);
@@ -97,9 +93,12 @@ runAccountsLogs = async () => {
     return accounts;
 }
 
-runSP = async (db_sch , sp_name) => {
+runSP = async () => {
    
-    var data = sequelize.query('CALL '+db_sch+sp_name+'();').then((response) => {
+    var data = sequelize.query(`
+        DECLARE	@return_value int
+        EXEC	@return_value = [dwh].[v3_populateDWH]
+        SELECT	'Return Value' = @return_value`).then((response) => {
         return true;
     }).catch((error) => {
         return false;
@@ -118,3 +117,29 @@ const getAccounts = async () => {
     } ); */
     return x;
 } 
+
+const trunc_plaid_app_data = async () => {
+    var data = await sequelize.query('DELETE FROM dbo.plaid_balance').catch((error) => { return false; }); 
+ 
+	var data = await sequelize.query('DELETE FROM dbo.plaid_investments_holdings').catch((error) => { return false; }); 
+var data = await  sequelize.query('DELETE FROM dbo.plaid_investments_securities').catch((error) => { return false; }); 
+	var data = await sequelize.query('DELETE FROM dbo.plaid_liabilities_credit').catch((error) => { return false; }); 
+	var data = await sequelize.query('DELETE FROM dbo.plaid_liabilities_credit_interest').catch((error) => { return false; }); 
+	var data = await sequelize.query('DELETE FROM dbo.plaid_liabilities_mortgage').catch((error) => { return false; }); 
+	var data = await sequelize.query('DELETE FROM dbo.plaid_liabilities_student').catch((error) => { return false; }); 
+} 
+
+
+
+
+
+
+const mostrecentflag_check = async () => {
+	var x = await sequelize.query("SELECT * FROM plaid_balance", { type: QueryTypes.SELECT });
+	var data = false;
+	if(x.length > 0){
+		var data = await sequelize.query('UPDATE dwh.fact_balance SET mostrecentflag = 0').catch((error) => { return false; });
+	}
+	return data;
+}
+ 

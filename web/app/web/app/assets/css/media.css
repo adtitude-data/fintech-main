@@ -1,0 +1,57 @@
+@media screen and (max-width: 768px) {
+
+  .account-holder-info {
+      padding: 0 15px;
+  }
+  .app-container header .container .topactions ul li ul.dropdown {position: relative;left: unset;top: unset;width: 100%;box-shadow: unset;display: block;}
+
+  .app-container header .container .topactions.mobile > ul > ul li {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: flex-start;
+      height: unset;
+      display: block;
+  }
+
+  .app-container header .container .topactions.mobile span.close-btn i {
+      color: black;
+  }
+
+  .app-container header .container .topactions ul li ul.dropdown li {
+      margin-left: 0;
+      padding-left: 0;
+      border-bottom: none;
+      margin-bottom: 0;
+  }
+
+  .app-container header .container .topactions ul li ul.dropdown li a {
+      color: #000;
+  }
+  .app-container header .container .topactions.mobile.show > ul {
+    padding-top: 70px;
+  }
+  .app-container header .container .topactions.mobile > ul > ul li a {
+    display: block;
+  }
+
+  .app-container header .container .topactions.mobile span.show-mobile-menu {
+      display: block;
+  }
+  .app-container header .container .topactions{
+    display: none;
+  }
+
+}
+
+@media screen and (max-width: 480px) {
+
+  .auth .form-area {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .auth.center-items {
+    padding: 0 15px;
+  }
+}

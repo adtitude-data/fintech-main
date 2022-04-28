@@ -1,0 +1,27 @@
+
+/**
+ *
+ * Footer
+ *
+ */
+
+ import React, { memo } from 'react';
+
+ // import PropTypes from 'prop-types';
+ // import styled from 'styled-components';
+
+ import { FormattedMessage } from 'react-intl';
+
+ function Footer() {
+   return (
+     <footer>
+        <div className="footer">
+           <p>&copy; 2022 Industry FinTech Inc.</p>
+         </div>
+     </footer>
+   );
+ }
+
+ Footer.propTypes = {};
+
+ export default memo(Footer);

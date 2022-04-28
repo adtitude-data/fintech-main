@@ -40,7 +40,6 @@ process.env.REACT_APP_ROUTEPATH = 'https://secureift.azurewebsites.net/';
 //process.env.REACT_APP_ROUTEPATH = 'http://localhost:3000/';
 
 
-
 // Create redux store with history
 const initialState = {};
 const store = configureStore(initialState, history);
