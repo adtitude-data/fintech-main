@@ -96,9 +96,9 @@ router.post('/create_link_token/:clientId', async function (request, response) {
     language: process.env.PLAID_LANG,
   };
 
-  if (PLAID_REDIRECT_URI !== '') {
+  /* if (PLAID_REDIRECT_URI !== '') {
     configs.redirect_uri = PLAID_REDIRECT_URI;
-  }
+  } */
 
   if (PLAID_ANDROID_PACKAGE_NAME !== '') {
     configs.android_package_name = PLAID_ANDROID_PACKAGE_NAME;
